@@ -1,3 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Super Podcast</string>
+    <string name="app_name">SuperPodcast</string>
+
+    <!-- Search -->
+    <string name="search_hint">Enter podcast search</string>
+    <string name="search">Search</string>
 </resources>
