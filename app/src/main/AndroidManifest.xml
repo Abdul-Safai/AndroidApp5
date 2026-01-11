@@ -10,6 +10,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SuperPodcast">
+        <activity android:name=".ui.PodcastDetailActivity" />
 
         <activity
             android:name=".ui.PodcastActivity"

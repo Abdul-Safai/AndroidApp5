@@ -1,11 +1,9 @@
 package com.trios2025dej.superpodcast.ui
 
-import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -25,7 +23,12 @@ class PodcastActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPodcastBinding
     private val vm by viewModels<SearchViewModel>()
     private lateinit var adapter: PodcastListAdapter
+
     private var searchJob: Job? = null
+
+    companion object {
+        private const val TAG = "PodcastActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,18 +39,23 @@ class PodcastActivity : AppCompatActivity() {
         vm.repo = ItunesRepo(ItunesService.api)
 
         adapter = PodcastListAdapter(emptyList()) { item ->
-            openLink(item.openUrl, item.title)
+            Log.i(TAG, "Clicked: ${item.title}")
+            val i = Intent(this, PodcastDetailActivity::class.java).apply {
+                putExtra(PodcastDetailActivity.EXTRA_TITLE, item.title)
+                putExtra(PodcastDetailActivity.EXTRA_AUTHOR, item.author)
+                putExtra(PodcastDetailActivity.EXTRA_FEED_URL, item.feedUrl)
+                putExtra(PodcastDetailActivity.EXTRA_COLLECTION_URL, item.collectionViewUrl)
+            }
+            startActivity(i)
         }
 
         binding.podcastRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.podcastRecyclerView.adapter = adapter
 
-        // Start empty (no list until search)
-        adapter.update(emptyList())
-        binding.progressBar.visibility = View.GONE
-
+        // If you have SearchView in XML:
         binding.searchView.isIconified = false
         binding.searchView.isSubmitButtonEnabled = true
+        binding.searchView.queryHint = "Search podcasts (ted, bbc, news)"
 
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
@@ -61,7 +69,7 @@ class PodcastActivity : AppCompatActivity() {
             override fun onQueryTextChange(newText: String?): Boolean {
                 val term = newText?.trim().orEmpty()
 
-                // ✅ This makes the X button work (clears list)
+                // Clear list when empty
                 if (term.isBlank()) {
                     searchJob?.cancel()
                     adapter.update(emptyList())
@@ -69,40 +77,33 @@ class PodcastActivity : AppCompatActivity() {
                     return true
                 }
 
-                // debounce search while typing
+                // debounce typing
                 searchJob?.cancel()
                 searchJob = lifecycleScope.launch {
-                    delay(450)
+                    delay(500)
                     if (term.isNotBlank()) performSearch(term)
                 }
                 return true
             }
         })
+
+        // ✅ Start with empty list (NO auto search)
+        adapter.update(emptyList())
     }
 
     private fun performSearch(term: String) {
         binding.progressBar.visibility = View.VISIBLE
 
         lifecycleScope.launch {
-            val results = vm.search(term)
-            adapter.update(results)
-            binding.progressBar.visibility = View.GONE
-        }
-    }
-
-    private fun openLink(url: String, title: String) {
-        val clean = url.trim()
-
-        if (clean.isBlank()) {
-            Toast.makeText(this, "No link found for: $title", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(clean)))
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "No browser app found.", Toast.LENGTH_LONG).show()
+            try {
+                val results = vm.search(term)
+                adapter.update(results)
+            } catch (e: Exception) {
+                Log.e(TAG, "Search failed", e)
+                adapter.update(emptyList())
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
         }
     }
 }
-BBC

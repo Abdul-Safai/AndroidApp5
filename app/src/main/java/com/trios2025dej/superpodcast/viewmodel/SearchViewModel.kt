@@ -11,8 +11,12 @@ class SearchViewModel : ViewModel() {
     data class PodcastItem(
         val title: String,
         val author: String,
-        val openUrl: String // ✅ we will open iTunes page first (better than RSS XML)
+        val feedUrl: String,
+        val collectionViewUrl: String
     )
+
+    private fun wordCount(s: String): Int =
+        s.trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
 
     suspend fun search(term: String): List<PodcastItem> {
         val safe = term.trim()
@@ -22,23 +26,32 @@ class SearchViewModel : ViewModel() {
             Log.i("SearchVM", "🌐 searching term='$safe'")
 
             val response = repo.search(safe)
-
             Log.i("SearchVM", "✅ code=${response.code()} success=${response.isSuccessful}")
 
             if (!response.isSuccessful) return emptyList()
 
             val body = response.body()
-            Log.i("SearchVM", "📦 resultCount=${body?.resultCount} size=${body?.results?.size}")
+            val raw = body?.results ?: emptyList()
+            Log.i("SearchVM", "📦 resultCount=${body?.resultCount} size=${raw.size}")
 
-            body?.results?.map { p ->
-                val title = p.collectionCensoredName ?: p.collectionName ?: "Podcast"
-                val author = p.artistName ?: ""
+            // ✅ Map
+            val mapped = raw.map { p ->
+                PodcastItem(
+                    title = p.collectionCensoredName ?: p.collectionName ?: "Podcast",
+                    author = p.artistName ?: "",
+                    feedUrl = p.feedUrl ?: "",
+                    collectionViewUrl = p.collectionViewUrl ?: ""
+                )
+            }
 
-                // ✅ Prefer normal web page. If missing, fallback to RSS feedUrl.
-                val url = p.collectionViewUrl ?: p.feedUrl ?: ""
+            // ✅ ADVANCED / UNUSUAL CRITERIA:
+            // Filter results to podcasts whose TITLE has at least 3 words.
+            val minWords = 3
+            val filtered = mapped.filter { wordCount(it.title) >= minWords }
 
-                PodcastItem(title = title, author = author, openUrl = url)
-            } ?: emptyList()
+            Log.i("SearchVM", "🔎 after wordCount filter (>= $minWords): ${filtered.size}")
+
+            filtered
 
         } catch (e: Exception) {
             Log.e("SearchVM", "💥 error: ${e.message}", e)

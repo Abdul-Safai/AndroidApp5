@@ -23,7 +23,7 @@ data class ItunesPodcast(
     @SerializedName("feedUrl")
     val feedUrl: String? = null,
 
-    // ✅ this opens a normal iTunes web page (better than RSS XML)
     @SerializedName("collectionViewUrl")
     val collectionViewUrl: String? = null
+
 )
