@@ -18,22 +18,41 @@ class PodcastListAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val v = LayoutInflater.from(parent.context)
+        val view = LayoutInflater.from(parent.context)
             .inflate(android.R.layout.simple_list_item_2, parent, false)
-        return VH(v)
+        return VH(view)
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
-        holder.title.text = item.title
+
+        holder.title.text = item.title.ifBlank { "Podcast" }
         holder.subtitle.text = item.author
-        holder.itemView.setOnClickListener { onClick(item) }
+
+        // ✅ Reliable click (safe with notifyDataSetChanged / updates)
+        holder.itemView.setOnClickListener {
+            val p = holder.bindingAdapterPosition
+            if (p != RecyclerView.NO_POSITION) {
+                onClick(items[p])
+            }
+        }
+
+        // Optional: Long click for quick debugging
+        // holder.itemView.setOnLongClickListener {
+        //     val p = holder.bindingAdapterPosition
+        //     if (p != RecyclerView.NO_POSITION) onClick(items[p])
+        //     true
+        // }
     }
 
-    override fun getItemCount() = items.size
+    override fun getItemCount(): Int = items.size
 
     fun update(data: List<SearchViewModel.PodcastItem>) {
         items = data
         notifyDataSetChanged()
+    }
+
+    fun clear() {
+        update(emptyList())
     }
 }

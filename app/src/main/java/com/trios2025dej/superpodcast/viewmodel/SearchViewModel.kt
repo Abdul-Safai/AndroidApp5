@@ -11,7 +11,7 @@ class SearchViewModel : ViewModel() {
     data class PodcastItem(
         val title: String,
         val author: String,
-        val feedUrl: String
+        val openUrl: String // ✅ we will open iTunes page first (better than RSS XML)
     )
 
     suspend fun search(term: String): List<PodcastItem> {
@@ -31,11 +31,13 @@ class SearchViewModel : ViewModel() {
             Log.i("SearchVM", "📦 resultCount=${body?.resultCount} size=${body?.results?.size}")
 
             body?.results?.map { p ->
-                PodcastItem(
-                    title = p.collectionCensoredName ?: p.collectionName ?: "Podcast",
-                    author = p.artistName ?: "",
-                    feedUrl = p.feedUrl ?: ""
-                )
+                val title = p.collectionCensoredName ?: p.collectionName ?: "Podcast"
+                val author = p.artistName ?: ""
+
+                // ✅ Prefer normal web page. If missing, fallback to RSS feedUrl.
+                val url = p.collectionViewUrl ?: p.feedUrl ?: ""
+
+                PodcastItem(title = title, author = author, openUrl = url)
             } ?: emptyList()
 
         } catch (e: Exception) {
