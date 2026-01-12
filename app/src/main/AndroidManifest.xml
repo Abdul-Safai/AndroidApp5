@@ -11,20 +11,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SuperPodcast">
 
-        <!-- Main screen -->
+        <!-- Detail screen -->
+        <activity
+            android:name=".ui.PodcastDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.SubscriptionsActivity"
+            android:exported="false" />
+
+
+        <!-- Main screen (Launcher) -->
         <activity
             android:name=".ui.PodcastActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
 
-        <!-- Details screen (not exported) -->
-        <activity
-            android:name=".ui.PodcastDetailActivity"
-            android:exported="false" />
+        </activity>
 
     </application>
 

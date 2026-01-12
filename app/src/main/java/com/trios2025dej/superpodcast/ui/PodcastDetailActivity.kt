@@ -27,11 +27,12 @@ class PodcastDetailActivity : AppCompatActivity() {
         binding.titleText.text = title
         binding.authorText.text = author.ifBlank { "Unknown author" }
 
-        // ✅ IMPORTANT:
-        // Open the podcast "page" first (nice UI). Feed URL is XML.
-        val openUrl = (if (collectionUrl.isNotBlank()) collectionUrl else feedUrl).trim()
+        // ✅ CHANGE 1 FIX:
+        // Only open the COLLECTION PAGE (normal website UI).
+        // feedUrl is RSS/XML and will show raw XML in browser.
+        val openUrl = collectionUrl.trim()
 
-        // ✅ Subscription key (prefer feedUrl because it's a stable identifier for RSS)
+        // ✅ Subscription key (prefer feedUrl because it's a stable RSS identifier)
         val subKey = (if (feedUrl.isNotBlank()) feedUrl else collectionUrl).trim()
 
         fun refreshSubscribeButton() {
@@ -43,9 +44,14 @@ class PodcastDetailActivity : AppCompatActivity() {
 
         binding.openBtn.setOnClickListener {
             if (openUrl.isBlank()) {
-                Toast.makeText(this, "No link available for this podcast.", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    "No webpage available for this podcast.",
+                    Toast.LENGTH_LONG
+                ).show()
                 return@setOnClickListener
             }
+
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(openUrl)))
             } catch (e: ActivityNotFoundException) {
