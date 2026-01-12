@@ -6,55 +6,80 @@ import com.trios2025dej.superpodcast.repository.ItunesRepo
 
 class SearchViewModel : ViewModel() {
 
-    lateinit var repo: ItunesRepo
+    companion object {
+        private const val TAG = "SearchVM"
+        private const val MIN_WORDS_IN_TITLE = 3   // advanced/unusual criteria
+    }
+
+    // Safer than lateinit (prevents crashes if you forget to set it)
+    var repo: ItunesRepo? = null
 
     data class PodcastItem(
         val title: String,
         val author: String,
         val feedUrl: String,
-        val collectionViewUrl: String
+        val collectionViewUrl: String,
+        val imageUrl: String
     )
 
     private fun wordCount(s: String): Int =
-        s.trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+        s.trim().split(Regex("\\s+")).count { it.isNotBlank() }
 
     suspend fun search(term: String): List<PodcastItem> {
         val safe = term.trim()
         if (safe.isBlank()) return emptyList()
 
+        val repoSafe = repo
+        if (repoSafe == null) {
+            Log.e(TAG, "❌ repo is NULL. Did you set vm.repo = ItunesRepo(...) ?")
+            return emptyList()
+        }
+
         return try {
-            Log.i("SearchVM", "🌐 searching term='$safe'")
+            Log.i(TAG, "🌐 searching term='$safe'")
 
-            val response = repo.search(safe)
-            Log.i("SearchVM", "✅ code=${response.code()} success=${response.isSuccessful}")
+            val response = repoSafe.search(safe)
+            Log.i(TAG, "✅ code=${response.code()} success=${response.isSuccessful}")
 
-            if (!response.isSuccessful) return emptyList()
+            if (!response.isSuccessful) {
+                Log.e(TAG, "❌ API failed: ${response.code()} ${response.message()}")
+                return emptyList()
+            }
 
             val body = response.body()
-            val raw = body?.results ?: emptyList()
-            Log.i("SearchVM", "📦 resultCount=${body?.resultCount} size=${raw.size}")
+            val raw = body?.results.orEmpty()
+            Log.i(TAG, "📦 resultCount=${body?.resultCount} size=${raw.size}")
 
-            // ✅ Map
+            // Map -> PodcastItem
             val mapped = raw.map { p ->
+                val title = p.collectionCensoredName
+                    ?: p.collectionName
+                    ?: "Podcast"
+
+                val img = p.artworkUrl100
+                    ?: p.artworkUrl60
+                    ?: p.artworkUrl30
+                    ?: p.artworkUrl600
+                    ?: ""
+
                 PodcastItem(
-                    title = p.collectionCensoredName ?: p.collectionName ?: "Podcast",
+                    title = title,
                     author = p.artistName ?: "",
                     feedUrl = p.feedUrl ?: "",
-                    collectionViewUrl = p.collectionViewUrl ?: ""
+                    collectionViewUrl = p.collectionViewUrl ?: "",
+                    imageUrl = img
                 )
             }
 
-            // ✅ ADVANCED / UNUSUAL CRITERIA:
-            // Filter results to podcasts whose TITLE has at least 3 words.
-            val minWords = 3
-            val filtered = mapped.filter { wordCount(it.title) >= minWords }
+            // ✅ Advanced criteria: keep only titles with MIN_WORDS_IN_TITLE+ words
+            val filtered = mapped.filter { wordCount(it.title) >= MIN_WORDS_IN_TITLE }
 
-            Log.i("SearchVM", "🔎 after wordCount filter (>= $minWords): ${filtered.size}")
+            Log.i(TAG, "🔎 after title-word filter (>= $MIN_WORDS_IN_TITLE): ${filtered.size}")
 
             filtered
 
         } catch (e: Exception) {
-            Log.e("SearchVM", "💥 error: ${e.message}", e)
+            Log.e(TAG, "💥 error: ${e.message}", e)
             emptyList()
         }
     }

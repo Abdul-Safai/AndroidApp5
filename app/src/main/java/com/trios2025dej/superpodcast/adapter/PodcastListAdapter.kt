@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.trios2025dej.superpodcast.R
 import com.trios2025dej.superpodcast.viewmodel.SearchViewModel
 
 class PodcastListAdapter(
@@ -13,36 +14,29 @@ class PodcastListAdapter(
 ) : RecyclerView.Adapter<PodcastListAdapter.VH>() {
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
-        val title: TextView = view.findViewById(android.R.id.text1)
-        val subtitle: TextView = view.findViewById(android.R.id.text2)
+        val title: TextView = view.findViewById(R.id.txtTitle)
+        val author: TextView = view.findViewById(R.id.txtAuthor)
+        val hint: TextView = view.findViewById(R.id.txtHint)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_2, parent, false)
-        return VH(view)
+        val v = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_podcast, parent, false)
+        return VH(v)
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
 
-        holder.title.text = item.title.ifBlank { "Podcast" }
-        holder.subtitle.text = item.author
-
-        // ✅ Reliable click (safe with notifyDataSetChanged / updates)
-        holder.itemView.setOnClickListener {
-            val p = holder.bindingAdapterPosition
-            if (p != RecyclerView.NO_POSITION) {
-                onClick(items[p])
-            }
+        holder.title.text = item.title
+        holder.author.text = if (item.author.isBlank()) "Unknown author" else item.author
+        holder.hint.text = if (item.feedUrl.isNotBlank() || item.collectionViewUrl.isNotBlank()) {
+            "Tap to open"
+        } else {
+            "No link available"
         }
 
-        // Optional: Long click for quick debugging
-        // holder.itemView.setOnLongClickListener {
-        //     val p = holder.bindingAdapterPosition
-        //     if (p != RecyclerView.NO_POSITION) onClick(items[p])
-        //     true
-        // }
+        holder.itemView.setOnClickListener { onClick(item) }
     }
 
     override fun getItemCount(): Int = items.size
@@ -50,9 +44,5 @@ class PodcastListAdapter(
     fun update(data: List<SearchViewModel.PodcastItem>) {
         items = data
         notifyDataSetChanged()
-    }
-
-    fun clear() {
-        update(emptyList())
     }
 }

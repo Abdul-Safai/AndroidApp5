@@ -27,10 +27,11 @@ class PodcastDetailActivity : AppCompatActivity() {
         binding.titleText.text = title
         binding.authorText.text = author.ifBlank { "Unknown author" }
 
-        // Use feedUrl if available, otherwise fallback to collectionViewUrl
-        val openUrl = (if (feedUrl.isNotBlank()) feedUrl else collectionUrl).trim()
+        // ✅ IMPORTANT:
+        // Open the podcast "page" first (nice UI). Feed URL is XML.
+        val openUrl = (if (collectionUrl.isNotBlank()) collectionUrl else feedUrl).trim()
 
-        // Use a stable key for subscribe (prefer feedUrl, else collectionUrl)
+        // ✅ Subscription key (prefer feedUrl because it's a stable identifier for RSS)
         val subKey = (if (feedUrl.isNotBlank()) feedUrl else collectionUrl).trim()
 
         fun refreshSubscribeButton() {
@@ -54,7 +55,7 @@ class PodcastDetailActivity : AppCompatActivity() {
 
         binding.subscribeBtn.setOnClickListener {
             if (subKey.isBlank()) {
-                Toast.makeText(this, "Cannot subscribe: no podcast link key.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Cannot subscribe: no podcast key.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
