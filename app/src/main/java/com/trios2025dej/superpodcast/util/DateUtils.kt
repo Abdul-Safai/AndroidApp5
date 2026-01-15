@@ -1,16 +1,18 @@
 package com.trios2025dej.superpodcast.util
 
-import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 object DateUtils {
-    fun jsonDateToShortDate(jsonDate: String?): String {
-        if (jsonDate == null) return "-"
 
-        val inFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val date = inFormat.parse(jsonDate) ?: return "-"
-        val outputFormat = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault())
-        return outputFormat.format(date)
+    fun xmlDateToDate(dateString: String?): Date {
+        val date = dateString ?: return Date()
+        return try {
+            val inFormat = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.getDefault())
+            inFormat.parse(date) ?: Date()
+        } catch (e: Exception) {
+            Date()
+        }
     }
 }

@@ -8,30 +8,33 @@ class SearchViewModel : ViewModel() {
 
     companion object {
         private const val TAG = "SearchVM"
-        private const val MIN_WORDS_IN_TITLE = 3   // advanced/unusual criteria
+        private const val MIN_WORDS_IN_TITLE = 3
     }
 
-    // Safer than lateinit (prevents crashes if you forget to set it)
+    // Set this in PodcastActivity:
+    // searchViewModel.repo = ItunesRepo(ItunesService.instance)
     var repo: ItunesRepo? = null
 
-    data class PodcastItem(
-        val title: String,
-        val author: String,
-        val feedUrl: String,
-        val collectionViewUrl: String,
-        val imageUrl: String
+    // ✅ Matches the teacher-style "summary" object the list screen uses
+    data class PodcastSummaryViewData(
+        var name: String = "",
+        var author: String = "",
+        var lastUpdated: String = "",
+        var imageUrl: String = "",
+        var feedUrl: String = "",
+        var collectionViewUrl: String = ""
     )
 
     private fun wordCount(s: String): Int =
         s.trim().split(Regex("\\s+")).count { it.isNotBlank() }
 
-    suspend fun search(term: String): List<PodcastItem> {
+    suspend fun search(term: String): List<PodcastSummaryViewData> {
         val safe = term.trim()
         if (safe.isBlank()) return emptyList()
 
         val repoSafe = repo
         if (repoSafe == null) {
-            Log.e(TAG, "❌ repo is NULL. Did you set vm.repo = ItunesRepo(...) ?")
+            Log.e(TAG, "❌ repo is NULL. Did you set searchViewModel.repo = ItunesRepo(...) ?")
             return emptyList()
         }
 
@@ -46,11 +49,9 @@ class SearchViewModel : ViewModel() {
                 return emptyList()
             }
 
-            val body = response.body()
-            val raw = body?.results.orEmpty()
-            Log.i(TAG, "📦 resultCount=${body?.resultCount} size=${raw.size}")
+            val raw = response.body()?.results.orEmpty()
+            Log.i(TAG, "📦 results size=${raw.size}")
 
-            // Map -> PodcastItem
             val mapped = raw.map { p ->
                 val title = p.collectionCensoredName
                     ?: p.collectionName
@@ -62,22 +63,21 @@ class SearchViewModel : ViewModel() {
                     ?: p.artworkUrl600
                     ?: ""
 
-                PodcastItem(
-                    title = title,
+                PodcastSummaryViewData(
+                    name = title,
                     author = p.artistName ?: "",
+                    lastUpdated = p.releaseDate ?: "",   // keep raw; you can format later if you want
+                    imageUrl = img,
                     feedUrl = p.feedUrl ?: "",
-                    collectionViewUrl = p.collectionViewUrl ?: "",
-                    imageUrl = img
+                    collectionViewUrl = p.collectionViewUrl ?: ""
                 )
             }
 
-            // ✅ Advanced criteria: keep only titles with MIN_WORDS_IN_TITLE+ words
-            val filtered = mapped.filter { wordCount(it.title) >= MIN_WORDS_IN_TITLE }
-
+            // ✅ Your advanced criteria stays
+            val filtered = mapped.filter { wordCount(it.name) >= MIN_WORDS_IN_TITLE }
             Log.i(TAG, "🔎 after title-word filter (>= $MIN_WORDS_IN_TITLE): ${filtered.size}")
 
             filtered
-
         } catch (e: Exception) {
             Log.e(TAG, "💥 error: ${e.message}", e)
             emptyList()

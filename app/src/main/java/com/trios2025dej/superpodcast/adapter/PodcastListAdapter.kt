@@ -1,48 +1,49 @@
 package com.trios2025dej.superpodcast.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.trios2025dej.superpodcast.R
+import com.bumptech.glide.Glide
+import com.trios2025dej.superpodcast.databinding.RowPodcastBinding
 import com.trios2025dej.superpodcast.viewmodel.SearchViewModel
 
 class PodcastListAdapter(
-    private var items: List<SearchViewModel.PodcastItem>,
-    private val onClick: (SearchViewModel.PodcastItem) -> Unit
+    private var items: List<SearchViewModel.PodcastSummaryViewData>,
+    private val listener: PodcastListAdapterListener
 ) : RecyclerView.Adapter<PodcastListAdapter.VH>() {
 
-    class VH(view: View) : RecyclerView.ViewHolder(view) {
-        val title: TextView = view.findViewById(R.id.txtTitle)
-        val author: TextView = view.findViewById(R.id.txtAuthor)
-        val hint: TextView = view.findViewById(R.id.txtHint)
+    interface PodcastListAdapterListener {
+        fun onShowDetails(item: SearchViewModel.PodcastSummaryViewData)
     }
 
+    inner class VH(val binding: RowPodcastBinding) : RecyclerView.ViewHolder(binding.root)
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val v = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_podcast, parent, false)
-        return VH(v)
+        val binding = RowPodcastBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return VH(binding)
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
 
-        holder.title.text = item.title
-        holder.author.text = if (item.author.isBlank()) "Unknown author" else item.author
-        holder.hint.text = if (item.feedUrl.isNotBlank() || item.collectionViewUrl.isNotBlank()) {
-            "Tap to open"
-        } else {
-            "No link available"
-        }
+        holder.binding.podcastTitleText.text = item.name ?: "Podcast"
+        holder.binding.podcastAuthorText.text = item.author ?: ""
 
-        holder.itemView.setOnClickListener { onClick(item) }
+        Glide.with(holder.itemView)
+            .load(item.imageUrl)
+            .into(holder.binding.podcastImage)
+
+        holder.itemView.setOnClickListener { listener.onShowDetails(item) }
     }
 
     override fun getItemCount(): Int = items.size
 
-    fun update(data: List<SearchViewModel.PodcastItem>) {
-        items = data
+    fun updateData(newList: List<SearchViewModel.PodcastSummaryViewData>) {
+        items = newList
         notifyDataSetChanged()
     }
 }
