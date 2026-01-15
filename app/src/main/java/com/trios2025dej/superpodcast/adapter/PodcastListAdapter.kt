@@ -17,12 +17,10 @@ class PodcastListAdapter(
         fun onTogglePlay(item: SearchViewModel.PodcastSummaryViewData)
     }
 
-    // Which podcast is currently playing (key = feedUrl)
+    // Only 1 item can be loading/playing at a time
+    private var loadingFeedUrl: String? = null
     private var playingFeedUrl: String? = null
     private var isPlaying: Boolean = false
-
-    // Optional: show loading state while fetching RSS/audio url
-    private var loadingFeedUrl: String? = null
 
     inner class VH(val binding: RowPodcastBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -37,6 +35,7 @@ class PodcastListAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
+        val feedUrl = item.feedUrl?.trim().orEmpty()
 
         holder.binding.podcastTitleText.text = item.name ?: "Podcast"
         holder.binding.podcastAuthorText.text = item.author ?: ""
@@ -45,45 +44,25 @@ class PodcastListAdapter(
             .load(item.imageUrl)
             .into(holder.binding.podcastImage)
 
-        // Row click => details screen
-        holder.itemView.setOnClickListener {
-            listener.onShowDetails(item)
-        }
+        // Row tap -> details
+        holder.itemView.setOnClickListener { listener.onShowDetails(item) }
 
-        // Play button click => play/pause preview
+        // Play button logic
+        val isLoadingRow = (feedUrl.isNotBlank() && feedUrl == loadingFeedUrl)
+        val isPlayingRow = (feedUrl.isNotBlank() && feedUrl == playingFeedUrl && isPlaying)
+
+        holder.binding.playBtn.isEnabled = !isLoadingRow
+
+        holder.binding.playBtn.setImageResource(
+            when {
+                isLoadingRow -> android.R.drawable.ic_popup_sync
+                isPlayingRow -> android.R.drawable.ic_media_pause
+                else -> android.R.drawable.ic_media_play
+            }
+        )
+
         holder.binding.playBtn.setOnClickListener {
-            // show loading state immediately (PodcastActivity will call setPlayingState after)
-            val feedUrl = item.feedUrl?.trim().orEmpty()
-            if (feedUrl.isNotBlank()) {
-                loadingFeedUrl = feedUrl
-                notifyDataSetChanged()
-            }
             listener.onTogglePlay(item)
-        }
-
-        // ----------------------------
-        // Icon state for this row
-        // ----------------------------
-        val feedUrl = item.feedUrl?.trim().orEmpty()
-
-        when {
-            feedUrl.isNotBlank() && feedUrl == loadingFeedUrl -> {
-                // loading icon
-                holder.binding.playBtn.setImageResource(android.R.drawable.ic_popup_sync)
-                holder.binding.playBtn.isEnabled = false
-            }
-
-            feedUrl.isNotBlank() && feedUrl == playingFeedUrl && isPlaying -> {
-                // pause icon
-                holder.binding.playBtn.setImageResource(android.R.drawable.ic_media_pause)
-                holder.binding.playBtn.isEnabled = true
-            }
-
-            else -> {
-                // play icon
-                holder.binding.playBtn.setImageResource(android.R.drawable.ic_media_play)
-                holder.binding.playBtn.isEnabled = true
-            }
         }
     }
 
@@ -91,30 +70,23 @@ class PodcastListAdapter(
 
     fun updateData(newList: List<SearchViewModel.PodcastSummaryViewData>) {
         items = newList
-        // reset playing/loading when results change
-        playingFeedUrl = null
-        isPlaying = false
-        loadingFeedUrl = null
         notifyDataSetChanged()
     }
 
-    /**
-     * Called by PodcastActivity when playback changes.
-     * - If isPlaying=true => show pause icon on that row
-     * - If isPlaying=false => show play icon
-     */
-    fun setPlayingState(feedUrl: String, isPlayingNow: Boolean) {
-        playingFeedUrl = feedUrl
-        isPlaying = isPlayingNow
-        loadingFeedUrl = null // stop loading icon
+    // ✅ FIX: now accepts boolean (matches PodcastActivity calls)
+    fun setLoadingState(feedUrl: String, isLoading: Boolean) {
+        loadingFeedUrl = if (isLoading) feedUrl else null
         notifyDataSetChanged()
     }
 
-    /**
-     * If PodcastActivity hits an error, call this to clear loading state.
-     */
     fun clearLoadingState() {
         loadingFeedUrl = null
+        notifyDataSetChanged()
+    }
+
+    fun setPlayingState(feedUrl: String, playing: Boolean) {
+        playingFeedUrl = feedUrl
+        isPlaying = playing
         notifyDataSetChanged()
     }
 }
