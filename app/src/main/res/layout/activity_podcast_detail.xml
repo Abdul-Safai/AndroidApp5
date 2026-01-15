@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/detailRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -41,10 +42,30 @@
         android:text="Share"
         android:layout_marginTop="10dp" />
 
+    <!-- ✅ Loading message (no ProgressBar needed) -->
+    <TextView
+        android:id="@+id/loadingText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Loading episodes..."
+        android:visibility="gone"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp" />
+
+    <!-- ✅ Episodes list (PodPlay feature) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/episodeRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="8dp"
+        android:clipToPadding="false" />
+
     <Button
         android:id="@+id/backBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Back"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="12dp" />
+
 </LinearLayout>

@@ -8,24 +8,27 @@
 
     <ImageView
         android:id="@+id/podcastImage"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:scaleType="centerCrop"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:contentDescription="Podcast Image"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <TextView
         android:id="@+id/podcastTitleText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Podcast Title"
+        android:text="Podcast title"
         android:textStyle="bold"
         android:textSize="16sp"
-        android:layout_marginStart="12dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/podcastImage"
+        app:layout_constraintEnd_toStartOf="@id/playBtn"
         app:layout_constraintTop_toTopOf="@id/podcastImage"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"/>
 
     <TextView
         android:id="@+id/podcastAuthorText"
@@ -34,10 +37,23 @@
         android:text="Author"
         android:textSize="13sp"
         android:alpha="0.75"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="4dp"
-        app:layout_constraintStart_toEndOf="@id/podcastImage"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toStartOf="@id/podcastTitleText"
+        app:layout_constraintEnd_toStartOf="@id/playBtn"
         app:layout_constraintTop_toBottomOf="@id/podcastTitleText"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_marginTop="4dp"/>
+
+    <!-- ✅ NEW: Play button -->
+    <ImageButton
+        android:id="@+id/playBtn"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:contentDescription="Play latest episode"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_media_play"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
